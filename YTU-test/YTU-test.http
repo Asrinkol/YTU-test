@@ -1,0 +1,6 @@
+@YTU_test_HostAddress = http://localhost:5172
+
+GET {{YTU_test_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
