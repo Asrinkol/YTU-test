@@ -1,4 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using YTU_test.Data;
+using YTU_test.Models;
 
 namespace YTU_test.Controllers
 {
@@ -6,28 +9,46 @@ namespace YTU_test.Controllers
     [Route("[controller]")]
     public class WeatherForecastController : ControllerBase
     {
-        private static readonly string[] Summaries = new[]
-        {
-            "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-        };
-
+        private readonly AppDbContext _context;
         private readonly ILogger<WeatherForecastController> _logger;
 
-        public WeatherForecastController(ILogger<WeatherForecastController> logger)
+        public WeatherForecastController(AppDbContext context, ILogger<WeatherForecastController> logger)
         {
+            _context = context;
             _logger = logger;
         }
 
         [HttpGet(Name = "GetWeatherForecast")]
-        public IEnumerable<WeatherForecast> Get()
+        public async Task<IEnumerable<WeatherForecast>> Get()
         {
-            return Enumerable.Range(1, 5).Select(index => new WeatherForecast
+            return await _context.WeatherForecasts.ToListAsync();
+        }
+
+        [HttpPost("generate")]
+        public async Task<IActionResult> GenerateRandomForecasts()
+        {
+            var summaries = new[]
             {
-                Date = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
+        "Freezing", "Bracing", "Chilly", "Cool", "Mild",
+        "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
+    };
+
+            var forecasts = Enumerable.Range(1, 5).Select(index => new WeatherForecast
+            {
+                ForecastDate = DateTime.Now.AddDays(index),
                 TemperatureC = Random.Shared.Next(-20, 55),
-                Summary = Summaries[Random.Shared.Next(Summaries.Length)]
-            })
-            .ToArray();
+                Summary = summaries[Random.Shared.Next(summaries.Length)]
+            }).ToList();
+
+            _context.WeatherForecasts.AddRange(forecasts);
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                success = true,
+                message = "Random forecasts added.",
+                count = forecasts.Count
+            });
         }
     }
 }

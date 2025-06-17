@@ -1,8 +1,9 @@
-namespace YTU_test
+namespace YTU_test.Models
 {
     public class WeatherForecast
     {
-        public DateOnly Date { get; set; }
+        public int Id { get; set; }
+        public DateTime ForecastDate { get; set; }
 
         public int TemperatureC { get; set; }
 
