@@ -50,5 +50,21 @@ namespace YTU_test.Controllers
                 count = forecasts.Count
             });
         }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteForecast(int id)
+        {
+            var forecast = await _context.WeatherForecasts.FindAsync(id);
+            if (forecast == null)
+            {
+                return NotFound(new { success = false, message = $"Forecast with ID {id} not found." });
+            }
+
+            _context.WeatherForecasts.Remove(forecast);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { success = true, message = $"Forecast with ID {id} deleted." });
+        }
+
     }
 }
