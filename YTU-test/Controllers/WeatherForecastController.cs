@@ -66,5 +66,11 @@ namespace YTU_test.Controllers
             return Ok(new { success = true, message = $"Forecast with ID {id} deleted." });
         }
 
+        [HttpGet("ErrorThrow")]
+        public IActionResult ErrorThrow()
+        {
+            throw new Exception("This is a test exception to demonstrate error handling.");
+
+        }
     }
 }
