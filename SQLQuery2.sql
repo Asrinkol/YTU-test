@@ -1,0 +1,10 @@
+CREATE TABLE Users (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    Username NVARCHAR(256) NOT NULL,
+    PasswordHash NVARCHAR(512) NOT NULL,
+    FirstName NVARCHAR(256) NOT NULL,
+    LastName NVARCHAR(256) NOT NULL,
+    Role NVARCHAR(50) NOT NULL DEFAULT 'User',
+    RefreshToken NVARCHAR(MAX) NOT NULL,
+    RefreshTokenExpiryTime DATETIME2 NOT NULL
+);

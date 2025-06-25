@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using YTU_test.Data;
 using YTU_test.Models;
+using Microsoft.AspNetCore.Authorization; 
 
 namespace YTU_test.Controllers
 {
@@ -18,20 +19,24 @@ namespace YTU_test.Controllers
             _logger = logger;
         }
 
+        // Hem Admin hem User kullanabilir
         [HttpGet(Name = "GetWeatherForecast")]
+        [Authorize(Roles = "Admin,User")] 
         public async Task<IEnumerable<WeatherForecast>> Get()
         {
             return await _context.WeatherForecasts.ToListAsync();
         }
 
+        // Sadece Admin kullanabilir
         [HttpPost("generate")]
+        [Authorize(Roles = "Admin")] 
         public async Task<IActionResult> GenerateRandomForecasts()
         {
             var summaries = new[]
             {
-        "Freezing", "Bracing", "Chilly", "Cool", "Mild",
-        "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-    };
+                "Freezing", "Bracing", "Chilly", "Cool", "Mild",
+                "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
+            };
 
             var forecasts = Enumerable.Range(1, 5).Select(index => new WeatherForecast
             {
@@ -51,7 +56,9 @@ namespace YTU_test.Controllers
             });
         }
 
+        
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteForecast(int id)
         {
             var forecast = await _context.WeatherForecasts.FindAsync(id);
@@ -66,11 +73,12 @@ namespace YTU_test.Controllers
             return Ok(new { success = true, message = $"Forecast with ID {id} deleted." });
         }
 
+        
         [HttpGet("ErrorThrow")]
+        [Authorize(Roles = "Admin,User")] 
         public IActionResult ErrorThrow()
         {
             throw new Exception("This is a test exception to demonstrate error handling.");
-
         }
     }
 }
