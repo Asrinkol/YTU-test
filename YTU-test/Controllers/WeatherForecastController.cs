@@ -1,8 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using YTU_test.Data;
 using YTU_test.Models;
-using Microsoft.AspNetCore.Authorization; 
+using YTU_test.Models.Requests;
+using System.Linq;
+using System.Reflection;
 
 namespace YTU_test.Controllers
 {
@@ -20,18 +23,93 @@ namespace YTU_test.Controllers
         }
 
         
+        [HttpGet("GetForecasts")]
+        [Authorize(Roles = "Admin,User")]
+        public async Task<IActionResult> GetForecasts([FromQuery] WeatherForecastQueryParameters queryParameters)
+        {
+            _logger.LogInformation("GetForecasts isteði alýndý. Query: {@Query}", queryParameters);
+
+            IQueryable<WeatherForecast> forecasts = _context.WeatherForecasts;
+
+            
+            if (queryParameters.MinDate.HasValue)
+            {
+                forecasts = forecasts.Where(f => f.ForecastDate >= queryParameters.MinDate.Value);
+            }
+            if (queryParameters.MaxDate.HasValue)
+            {
+                forecasts = forecasts.Where(f => f.ForecastDate <= queryParameters.MaxDate.Value);
+            }
+            if (queryParameters.MinTemperatureC.HasValue)
+            {
+                forecasts = forecasts.Where(f => f.TemperatureC >= queryParameters.MinTemperatureC.Value);
+            }
+            if (queryParameters.MaxTemperatureC.HasValue)
+            {
+                forecasts = forecasts.Where(f => f.TemperatureC <= queryParameters.MaxTemperatureC.Value);
+            }
+            if (!string.IsNullOrWhiteSpace(queryParameters.SummaryContains))
+            {
+                forecasts = forecasts.Where(f => f.Summary != null && f.Summary.ToLowerInvariant().Contains(queryParameters.SummaryContains.ToLowerInvariant()));
+            }
+
+            
+            var totalCount = await forecasts.CountAsync();
+
+            
+            if (!string.IsNullOrWhiteSpace(queryParameters.SortBy))
+            {
+                var propertyInfo = typeof(WeatherForecast).GetProperty(queryParameters.SortBy, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+
+                if (propertyInfo == null)
+                {
+                    _logger.LogWarning("Geçersiz sýralama sütunu: {SortBy}", queryParameters.SortBy);
+                    return BadRequest($"Sýralama için geçersiz sütun adý: {queryParameters.SortBy}");
+                }
+
+                if (queryParameters.SortOrder?.ToLower() == "desc")
+                {
+                    forecasts = forecasts.OrderByDescending(f => propertyInfo.GetValue(f));
+                }
+                else
+                {
+                    forecasts = forecasts.OrderBy(f => propertyInfo.GetValue(f));
+                }
+            }
+            else
+            {
+                
+                forecasts = forecasts.OrderBy(f => f.Id);
+            }
+
+            
+            var pagedForecasts = await forecasts
+                .Skip((queryParameters.PageNumber - 1) * queryParameters.PageSize)
+                .Take(queryParameters.PageSize)
+                .ToListAsync();
+
+            
+            return Ok(new
+            {
+                TotalCount = totalCount,
+                PageNumber = queryParameters.PageNumber,
+                PageSize = queryParameters.PageSize,
+                Data = pagedForecasts
+            });
+        }
+
+        
+        /*
         [HttpGet(Name = "GetWeatherForecast")]
-        //[AllowAnonymous]
-        [Authorize(Roles = "Admin,User")] 
+        [Authorize(Roles = "Admin,User")]
         public async Task<IEnumerable<WeatherForecast>> Get()
         {
             return await _context.WeatherForecasts.ToListAsync();
         }
+        */
 
-        
         [HttpPost("generate")]
-        //[AllowAnonymous]
-        [Authorize(Roles = "Admin")] 
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GenerateRandomForecasts()
         {
             var summaries = new[]
@@ -58,9 +136,7 @@ namespace YTU_test.Controllers
             });
         }
 
-        
         [HttpDelete("{id}")]
-        //[AllowAnonymous]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteForecast(int id)
         {
@@ -76,10 +152,8 @@ namespace YTU_test.Controllers
             return Ok(new { success = true, message = $"Forecast with ID {id} deleted." });
         }
 
-        
         [HttpGet("ErrorThrow")]
-        //[AllowAnonymous]
-        [Authorize(Roles = "Admin,User")] 
+        [Authorize(Roles = "Admin,User")]
         public IActionResult ErrorThrow()
         {
             throw new Exception("This is a test exception to demonstrate error handling.");

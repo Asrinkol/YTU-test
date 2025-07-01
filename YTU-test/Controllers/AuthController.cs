@@ -70,7 +70,7 @@ public class AuthController : ControllerBase
             Message = "Giriş başarılı.",
             AccessToken = accessToken,
             RefreshToken = refreshToken,
-            ExpiresIn = 60
+            ExpiresIn = 600
         });
     }
 
@@ -110,7 +110,7 @@ public class AuthController : ControllerBase
             Message = "Token yenileme başarılı.",
             AccessToken = newAccessToken,
             RefreshToken = newRefreshToken,
-            ExpiresIn = 60
+            ExpiresIn = 600
         });
     }
 }
