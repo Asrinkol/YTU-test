@@ -19,16 +19,18 @@ namespace YTU_test.Controllers
             _logger = logger;
         }
 
-        // Hem Admin hem User kullanabilir
+        
         [HttpGet(Name = "GetWeatherForecast")]
+        //[AllowAnonymous]
         [Authorize(Roles = "Admin,User")] 
         public async Task<IEnumerable<WeatherForecast>> Get()
         {
             return await _context.WeatherForecasts.ToListAsync();
         }
 
-        // Sadece Admin kullanabilir
+        
         [HttpPost("generate")]
+        //[AllowAnonymous]
         [Authorize(Roles = "Admin")] 
         public async Task<IActionResult> GenerateRandomForecasts()
         {
@@ -58,6 +60,7 @@ namespace YTU_test.Controllers
 
         
         [HttpDelete("{id}")]
+        //[AllowAnonymous]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteForecast(int id)
         {
@@ -75,6 +78,7 @@ namespace YTU_test.Controllers
 
         
         [HttpGet("ErrorThrow")]
+        //[AllowAnonymous]
         [Authorize(Roles = "Admin,User")] 
         public IActionResult ErrorThrow()
         {

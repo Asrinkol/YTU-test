@@ -1,2 +1,2 @@
-SELECT * FROM dbo.Users
-SELECT * FROM dbo.WeatherForecasts
+select * from dbo.Users
+select * from dbo.WeatherForecasts

@@ -5,6 +5,8 @@ using YTU_test.Data;
 using YTU_test.Models;
 using YTU_test.Models.Requests;
 using System.Linq;
+using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
 
 [ApiController]
 [Route("[controller]")]
@@ -26,7 +28,7 @@ public class AuthController : ControllerBase
             return BadRequest(new { message = "Kullanıcı adı zaten kayıtlı." });
 
         var validRoles = new List<string> { "User", "Admin" };
-        if (!validRoles.Contains(request.Role, StringComparer.OrdinalIgnoreCase)) // Case-insensitive karşılaştırma
+        if (!validRoles.Contains(request.Role, StringComparer.OrdinalIgnoreCase))
         {
             return BadRequest(new { message = "Geçersiz rol. Sadece 'User' veya 'Admin' rolleri kabul edilir." });
         }
@@ -68,9 +70,47 @@ public class AuthController : ControllerBase
             Message = "Giriş başarılı.",
             AccessToken = accessToken,
             RefreshToken = refreshToken,
-            ExpiresIn = 900 
+            ExpiresIn = 60
         });
     }
 
-    
+    [HttpPost("refresh-token")]
+    public async Task<IActionResult> RefreshToken(RefreshTokenRequest request)
+    {
+        var principal = _tokenService.GetPrincipalFromExpiredToken(request.AccessToken);
+        if (principal == null)
+        {
+            return BadRequest(new { message = "Geçersiz access token." });
+        }
+
+        
+        var username = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userIdClaim = principal.Claims.FirstOrDefault(c => c.Type == "id");
+
+        if (string.IsNullOrEmpty(username) || userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+        {
+            return BadRequest(new { message = "Access token'dan kullanıcı bilgileri alınamadı." });
+        }
+
+        var user = await _context.Users.SingleOrDefaultAsync(u => u.Id == userId && u.Username == username);
+        if (user == null || user.RefreshToken != request.RefreshToken || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
+        {
+            return Unauthorized(new { message = "Geçersiz veya süresi dolmuş refresh token." });
+        }
+
+        var newAccessToken = _tokenService.CreateAccessToken(user);
+        var newRefreshToken = _tokenService.CreateRefreshToken();
+
+        user.RefreshToken = newRefreshToken;
+        user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+        await _context.SaveChangesAsync();
+
+        return Ok(new
+        {
+            Message = "Token yenileme başarılı.",
+            AccessToken = newAccessToken,
+            RefreshToken = newRefreshToken,
+            ExpiresIn = 60
+        });
+    }
 }

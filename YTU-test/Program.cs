@@ -39,8 +39,8 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-// BURAYA TokenService'i eklemelisiniz!
-builder.Services.AddScoped<TokenService>(); // <-- Bu satýrý ekleyin!
+
+builder.Services.AddScoped<TokenService>(); 
 
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
@@ -51,7 +51,7 @@ Log.Logger = new LoggerConfiguration()
 
 builder.Host.UseSerilog();
 
-// 'builder.Services.AddControllers();' iki kereydi, birini sildim.
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -86,11 +86,14 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+
+app.UseSwagger();
+
+app.UseSwaggerUI(); // (c =>
+//{
+  //  c.SwaggerEndpoint("/swagger/v1/swagger.json", "YTU API V1");
+    //c.RoutePrefix = string.Empty;
+//});
 
 app.UseMiddleware<YTU_test.Middlewares.GlobalExceptionMiddleware>();
 
