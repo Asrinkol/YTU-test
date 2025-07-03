@@ -89,11 +89,11 @@ var app = builder.Build();
 
 app.UseSwagger();
 
-app.UseSwaggerUI(); // (c =>
-//{
-  //  c.SwaggerEndpoint("/swagger/v1/swagger.json", "YTU API V1");
-    //c.RoutePrefix = string.Empty;
-//});
+app.UseSwaggerUI(c =>
+  {
+     c.SwaggerEndpoint("/swagger/v1/swagger.json", "YTU API V1");
+     c.RoutePrefix = string.Empty;
+   });
 
 app.UseMiddleware<YTU_test.Middlewares.GlobalExceptionMiddleware>();
 
